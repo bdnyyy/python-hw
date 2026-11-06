@@ -13,20 +13,38 @@ if n <= 0 or k <= 0 or k > n:
     print("Ошибка: неверное количество точек или кластеров")
 else:
     centers = points[:k]
-    clusters = [[] for i in range(k)]
 
-    for point in points:
-        nearest = 0
-        min_distance = float("inf")
+    for step in range(100):
+        clusters = [[] for i in range(k)]
+
+        for point in points:
+            nearest = 0
+            min_distance = float("inf")
+
+            for i in range(k):
+                distance = (point[0] - centers[i][0]) ** 2 + (point[1] - centers[i][1]) ** 2
+
+                if distance < min_distance:
+                    min_distance = distance
+                    nearest = i
+
+            clusters[nearest].append(point)
+
+        new_centers = []
 
         for i in range(k):
-            distance = (point[0] - centers[i][0]) ** 2 + (point[1] - centers[i][1]) ** 2
+            if len(clusters[i]) > 0:
+                x = sum(point[0] for point in clusters[i]) / len(clusters[i])
+                y = sum(point[1] for point in clusters[i]) / len(clusters[i])
+                new_centers.append([x, y])
+            else:
+                new_centers.append(centers[i])
 
-            if distance < min_distance:
-                min_distance = distance
-                nearest = i
+        if new_centers == centers:
+            break
 
-        clusters[nearest].append(point)
+        centers = new_centers
 
     for i in range(k):
         print("Кластер", i + 1, ":", clusters[i])
+        print("Центр:", new_centers[i])
