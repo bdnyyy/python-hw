@@ -1,50 +1,55 @@
-n = int(input("Введите количество точек: "))
 
-points = []
+class KMeans:
+    def __init__(self, k):
+        self.k = k
+        self.centers = []
+        self.clusters = []
 
-for i in range(n):
-    x = float(input("Введите X: "))
-    y = float(input("Введите Y: "))
-    points.append([x, y])
+    def fit(self, points):
+        self.centers = [point[:] for point in points[:self.k]]
 
-k = int(input("Введите количество кластеров: "))
+        for step in range(100):
+            self.clusters = [[] for i in range(self.k)]
 
-if n <= 0 or k <= 0 or k > n:
-    print("Ошибка: неверное количество точек или кластеров")
-else:
-    centers = points[:k]
+            for point in points:
+                nearest = 0
+                min_distance = float("inf")
 
-    for step in range(100):
-        clusters = [[] for i in range(k)]
+                for i in range(self.k):
+                    distance = (point[0] - self.centers[i][0]) ** 2 + (point[1] - self.centers[i][1]) ** 2
 
-        for point in points:
-            nearest = 0
-            min_distance = float("inf")
+                    if distance < min_distance:
+                        min_distance = distance
+                        nearest = i
 
-            for i in range(k):
-                distance = (point[0] - centers[i][0]) ** 2 + (point[1] - centers[i][1]) ** 2
+                self.clusters[nearest].append(point)
 
-                if distance < min_distance:
-                    min_distance = distance
-                    nearest = i
+            new_centers = []
 
-            clusters[nearest].append(point)
+            for i in range(self.k):
+                if len(self.clusters[i]) > 0:
+                    x = sum(point[0] for point in self.clusters[i]) / len(self.clusters[i])
+                    y = sum(point[1] for point in self.clusters[i]) / len(self.clusters[i])
+                    new_centers.append([x, y])
+                else:
+                    new_centers.append(self.centers[i])
 
-        new_centers = []
+            if new_centers == self.centers:
+                break
 
-        for i in range(k):
-            if len(clusters[i]) > 0:
-                x = sum(point[0] for point in clusters[i]) / len(clusters[i])
-                y = sum(point[1] for point in clusters[i]) / len(clusters[i])
-                new_centers.append([x, y])
-            else:
-                new_centers.append(centers[i])
+            self.centers = new_centers
 
-        if new_centers == centers:
-            break
+        self.centers = new_centers
+        return self.clusters, self.centers
 
-        centers = new_centers
+
+if __name__ == "__main__":
+    points = [[1, 1], [10, 10], [2, 2], [9, 9], [3, 3]]
+    k = 2
+
+    model = KMeans(k)
+    clusters, centers = model.fit(points)
 
     for i in range(k):
         print("Кластер", i + 1, ":", clusters[i])
-        print("Центр:", new_centers[i])
+        print("Центр:", centers[i])
