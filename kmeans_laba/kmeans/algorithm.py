@@ -1,55 +1,122 @@
+"""Реализация алгоритма кластеризации K-means."""
+
+import random
+
 
 class KMeans:
-    def __init__(self, k):
-        self.k = k
-        self.centers = []
-        self.clusters = []
+    """Класс для разделения точек на кластеры."""
 
-    def fit(self, points):
-        self.centers = [point[:] for point in points[:self.k]]
+    def __init__(
+        self, n_clusters: int = 3, max_iter: int = 100, seed: int = 42
+    ) -> None:
+        """Сохраняет параметры алгоритма."""
+        if n_clusters < 1 or max_iter < 1:
+            raise ValueError(
+                "Количество кластеров и итераций должно быть положительным"
+            )
 
-        for step in range(100):
-            self.clusters = [[] for i in range(self.k)]
+        self.n_clusters = n_clusters
+        self.max_iter = max_iter
+        self.seed = seed
+        self.centers: list[list[float]] = []
 
-            for point in points:
-                nearest = 0
-                min_distance = float("inf")
+    def _init_centroids(self, X: list[list[float]]) -> None:
+        """Выбирает случайные начальные центры кластеров."""
+        generator = random.Random(self.seed)
+        self.centers = [point.copy() for point in generator.sample(X, self.n_clusters)]
 
-                for i in range(self.k):
-                    distance = (point[0] - self.centers[i][0]) ** 2 + (point[1] - self.centers[i][1]) ** 2
+    def _assign(self, X: list[list[float]]) -> list[int]:
+        """Определяет ближайший центр для каждой точки."""
+        labels = []
 
-                    if distance < min_distance:
-                        min_distance = distance
-                        nearest = i
+        for point in X:
+            nearest = 0
+            min_distance = float("inf")
 
-                self.clusters[nearest].append(point)
+            for i in range(self.n_clusters):
+                distance = sum(
+                    (point[j] - self.centers[i][j]) ** 2 for j in range(len(point))
+                )
 
-            new_centers = []
+                if distance < min_distance:
+                    min_distance = distance
+                    nearest = i
 
-            for i in range(self.k):
-                if len(self.clusters[i]) > 0:
-                    x = sum(point[0] for point in self.clusters[i]) / len(self.clusters[i])
-                    y = sum(point[1] for point in self.clusters[i]) / len(self.clusters[i])
-                    new_centers.append([x, y])
-                else:
-                    new_centers.append(self.centers[i])
+            labels.append(nearest)
 
-            if new_centers == self.centers:
-                break
+        return labels
 
-            self.centers = new_centers
+    def _update(self, X: list[list[float]], labels: list[int]) -> None:
+        """Пересчитывает центры кластеров."""
+        new_centers = []
+
+        for i in range(self.n_clusters):
+            cluster = [X[j] for j in range(len(X)) if labels[j] == i]
+
+            if cluster:
+                center = [
+                    sum(point[j] for point in cluster) / len(cluster)
+                    for j in range(len(X[0]))
+                ]
+                new_centers.append(center)
+            else:
+                new_centers.append(self.centers[i].copy())
 
         self.centers = new_centers
-        return self.clusters, self.centers
 
+    def fit(self, X: list[list[float]]) -> list[int]:
+        """Обучает модель и возвращает метки кластеров."""
+        if not X:
+            raise ValueError("Список точек не должен быть пустым")
 
-if __name__ == "__main__":
-    points = [[1, 1], [10, 10], [2, 2], [9, 9], [3, 3]]
-    k = 2
+        if self.n_clusters > len(X):
+            raise ValueError("Кластеров не может быть больше, чем точек")
 
-    model = KMeans(k)
-    clusters, centers = model.fit(points)
+        if not X[0] or any(len(point) != len(X[0]) for point in X):
+            raise ValueError("Все точки должны иметь одинаковую ненулевую размерность")
 
-    for i in range(k):
-        print("Кластер", i + 1, ":", clusters[i])
-        print("Центр:", centers[i])
+        self._init_centroids(X)
+
+        for _ in range(self.max_iter):
+            labels = self._assign(X)
+            old_centers = [center.copy() for center in self.centers]
+
+            self._update(X, labels)
+
+            if self.centers == old_centers:
+                break
+
+        return self._assign(X)
+
+    def predict(self, X: list[list[float]]) -> list[int]:
+        """Определяет кластеры для новых точек."""
+        if not self.centers:
+            raise ValueError("Сначала необходимо обучить модель")
+
+        if any(len(point) != len(self.centers[0]) for point in X):
+            raise ValueError("Размерность точек не совпадает с обучающими данными")
+
+        return self._assign(X)
+
+    def inertia(self, X: list[list[float]], labels: list[int]) -> float:
+        """Вычисляет сумму квадратов расстояний до центров."""
+        if not self.centers:
+            raise ValueError("Сначала необходимо обучить модель")
+
+        if len(X) != len(labels):
+            raise ValueError("Количество точек и меток должно совпадать")
+
+        if any(len(point) != len(self.centers[0]) for point in X):
+            raise ValueError("Размерность точек не совпадает с обучающими данными")
+
+        if any(label < 0 or label >= self.n_clusters for label in labels):
+            raise ValueError("Некорректная метка кластера")
+
+        total = 0.0
+
+        for point, label in zip(X, labels):
+            total += sum(
+                (point[j] - self.centers[label][j]) ** 2 for j in range(len(point))
+            )
+
+        return total
