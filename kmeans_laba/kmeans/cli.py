@@ -2,8 +2,11 @@
 
 import argparse
 
+import matplotlib.pyplot as plt
+
 from .algorithm import KMeans
 from .data import generate_points
+from .visualization import plot_clusters, plot_elbow
 
 
 def main() -> None:
@@ -14,6 +17,7 @@ def main() -> None:
     parser.add_argument("--k", type=int, default=3)
     parser.add_argument("--iter", type=int, default=100)
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--elbow", action="store_true")
 
     args = parser.parse_args()
 
@@ -43,3 +47,10 @@ def main() -> None:
         print(f"Кластер {i + 1}: {count} точек")
 
     print(f"Inertia: {total_inertia:.2f}")
+
+    plot_clusters(points, labels, model.centers)
+
+    if args.elbow:
+        plot_elbow(points, 10, args.iter, args.seed)
+
+    plt.show()
