@@ -1,5 +1,5 @@
 
-from kmeans import KMeans
+from kmeans.algorithm import KMeans
 
 
 def test_two_clusters():

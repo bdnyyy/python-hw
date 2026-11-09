@@ -1,0 +1,10 @@
+README.md
+pyproject.toml
+kmeans/__init__.py
+kmeans/algorithm.py
+kmeans_laba.egg-info/PKG-INFO
+kmeans_laba.egg-info/SOURCES.txt
+kmeans_laba.egg-info/dependency_links.txt
+kmeans_laba.egg-info/requires.txt
+kmeans_laba.egg-info/top_level.txt
+tests/test_kmeans.py
